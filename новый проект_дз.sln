@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "новый проект_дз", "новый проект_дз.csproj", "{5273D100-A3BD-4FAE-8C46-CBFE0B824FC0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Otus.ToDoList.ConsoleBot", "..\..\Desktop\C-Sharp-Basic\Homeworks\05.2 ООП интерфейсы\Otus.ToDoList.ConsoleBot\Otus.ToDoList.ConsoleBot.csproj", "{DD45F24A-7B0A-4D9E-A783-C52E22C1B64B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5273D100-A3BD-4FAE-8C46-CBFE0B824FC0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5273D100-A3BD-4FAE-8C46-CBFE0B824FC0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5273D100-A3BD-4FAE-8C46-CBFE0B824FC0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5273D100-A3BD-4FAE-8C46-CBFE0B824FC0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DD45F24A-7B0A-4D9E-A783-C52E22C1B64B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DD45F24A-7B0A-4D9E-A783-C52E22C1B64B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DD45F24A-7B0A-4D9E-A783-C52E22C1B64B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DD45F24A-7B0A-4D9E-A783-C52E22C1B64B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
