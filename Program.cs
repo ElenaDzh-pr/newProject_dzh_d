@@ -5,20 +5,25 @@ namespace ProjectDz;
 
 class Program
 {
-    //static string? name = null;
-    //static ToDoUser? currentUser;
-    //static List<ToDoItem> tasks = new List<ToDoItem>();
     static int maxTaskLimit = 0;
     static int maxTaskLength = 0;
-    //static int maxLengthTask = 100;
-    //static int minLengthTask = 1;
 
     static void Main(string[] args)
     {
+        int maxLimit;
+        do {
+            Console.WriteLine("Введите максимальное количество задач (1-100):");
+        } while (!int.TryParse(Console.ReadLine(), out maxLimit) || maxLimit < 1 || maxLimit > 100);
+
+        int maxLength;
+        do {
+            Console.WriteLine("Введите максимальную длину задачи (1-100):");
+        } while (!int.TryParse(Console.ReadLine(), out maxLength) || maxLength < 1 || maxLength > 100);
+        
         var userService = new UserService();
-        var toDoService = new ToDoService(maxTaskLimit, maxTaskLength);
-        var handler = new UpdateHandler(userService, toDoService);
         var botClient = new ConsoleBotClient();
+        var toDoService = new ToDoService(maxLimit, maxLength);
+        var handler = new UpdateHandler(userService, toDoService);
         botClient.StartReceiving(handler);
             
         while (true)
@@ -26,15 +31,6 @@ class Program
             try
             {
                 var command = Console.ReadLine();
-                var update = new Update
-                {
-                    Message = new Message
-                    {
-                        Text = command,
-                        Chat = new Chat { Id = 1 }
-                    }
-                };
-                handler.HandleUpdateAsync(botClient, update);
             }
             
             catch (Exception ex)

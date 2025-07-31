@@ -3,7 +3,6 @@ namespace ProjectDz;
 public class ToDoService  : IToDoService
 {
     private readonly Dictionary<Guid, List<ToDoItem>> _userTasks = new();
-    static List<ToDoItem> tasks = new List<ToDoItem>();
     private int _maxTaskLimit;
     private int _maxTaskLength;
     
@@ -55,8 +54,6 @@ public class ToDoService  : IToDoService
             throw new DuplicateTaskException(name);
         }
         
-        
-        
         var newTask = new ToDoItem(user, name);
         tasks.Add(newTask);
         return newTask;
@@ -64,40 +61,34 @@ public class ToDoService  : IToDoService
 
     public void MarkCompleted(Guid id)
     {
-        var task = tasks.FirstOrDefault(t => t.Id == id)
-                   ?? throw new KeyNotFoundException("Задача с указанным ID не найдена");
-        if (task.State == ToDoItem.ToDoItemState.Completed)
+        foreach (var userTasks in _userTasks.Values)
         {
-            throw new InvalidOperationException("Задача уже завершена");
+            var task = userTasks.FirstOrDefault(t => t.Id == id);
+            if (task != null)
+            {
+                if (task.State == ToDoItem.ToDoItemState.Completed)
+                    throw new InvalidOperationException("Задача уже завершена");
+                
+                task.State = ToDoItem.ToDoItemState.Completed;
+                task.StateChangedAt = DateTime.UtcNow;
+                return;
+            }
         }
-        
-        task.State = ToDoItem.ToDoItemState.Completed;
-        task.StateChangedAt = DateTime.UtcNow;
+        throw new KeyNotFoundException("Задача с указанным ID не найдена");
     }
 
     public void Delete(Guid id)
     {
-        var task = tasks.FirstOrDefault(t => t.Id == id)
-                   ?? throw new KeyNotFoundException("Задача с указанным ID не найдена");
-        
-        tasks.Remove(task);
+        foreach (var userTasks in _userTasks.Values)
+        {
+            var task = userTasks.FirstOrDefault(t => t.Id == id);
+            if (task != null)
+            {
+                userTasks.Remove(task);
+                return;
+            }
+        }
+        throw new KeyNotFoundException("Задача с указанным ID не найдена");
     }
     
-    public class TaskCountLimitException : Exception{
-        public TaskCountLimitException() : base() { }
-        public TaskCountLimitException(int maxTaskLimit) 
-            : base($"Превышено максимальное количество задач: {maxTaskLimit}") { }
-    }
-    
-    public class TaskLengthLimitException : Exception{
-        public TaskLengthLimitException() : base() { }
-        public TaskLengthLimitException(int taskLength, int maxTaskLength) 
-            : base($"Длина задачи {taskLength} превышает максимально допустимое значение {maxTaskLength}") { }
-    }
-    
-    public class DuplicateTaskException : Exception{
-        public DuplicateTaskException() : base() { }
-        public DuplicateTaskException(string task) 
-            : base($"Задача {task} уже существует") { }
-    }
 }

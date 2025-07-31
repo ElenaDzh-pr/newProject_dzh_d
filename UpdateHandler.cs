@@ -2,21 +2,8 @@ using Otus.ToDoList.ConsoleBot;
 using Otus.ToDoList.ConsoleBot.Types;
 using ProjectDz;
 
-//var handler = new UpdateHandler();
-//var botClient = new ConsoleBotClient();
-//botClient.StartReceiving(handler);
-
 public class UpdateHandler : IUpdateHandler
 {
-    
-    static string? name = null;
-    static ToDoUser? currentUser;
-    static List<ToDoItem> tasks = new List<ToDoItem>();
-    static int maxTaskLimit = 0;
-    static int maxTaskLength = 0;
-    static int maxLengthTask = 100;
-    static int minLengthTask = 1;
-    private static bool settingsInitialized = false;
     private readonly IUserService _userService;
     private readonly IToDoService _toDoService;
 
@@ -30,19 +17,17 @@ public class UpdateHandler : IUpdateHandler
     {
         try
         {
+            var currentUser = update.Message?.From != null 
+                ? _userService.GetUser(update.Message.From.Id) 
+                : null;
+            
             if (update.Message.Text?.ToLower() == "/start")
             {
                 RegisterUser(botClient, update.Message.Chat, update);
                 return;
             }
             
-            if (!settingsInitialized)
-            {
-                InitializeSettings(botClient, update.Message.Chat);
-                settingsInitialized = true;
-                ShowCurrentMenu(botClient, update.Message.Chat);
-                return;
-            }
+            ShowCurrentMenu(botClient, update.Message.Chat, currentUser);
             
             if (currentUser == null)
             {
@@ -55,12 +40,12 @@ public class UpdateHandler : IUpdateHandler
             if (update.Message.Text?.ToLower().StartsWith("/addtask") == true)
             {
                 var taskName = update.Message.Text.Substring("/addtask".Length).Trim();
-                AddTask(botClient, update.Message.Chat, taskName);
+                AddTask(botClient, update.Message.Chat, taskName, currentUser);
             }
             else if (update.Message.Text?.ToLower().StartsWith("/removetask") == true)
             {
                 var taskNumStr = update.Message.Text.Substring("/removetask".Length).Trim();
-                RemoveTask(botClient, update.Message.Chat, taskNumStr);
+                RemoveTask(botClient, update.Message.Chat, taskNumStr, currentUser);
             }
             else if (update.Message.Text?.ToLower().StartsWith("/completetask") == true)
             {
@@ -79,84 +64,38 @@ public class UpdateHandler : IUpdateHandler
                         Help(botClient, update.Message.Chat);
                         break;
                     case "/info":
-                        Info(botClient, update.Message.Chat);
+                        Info(botClient, update.Message.Chat, currentUser);
                         break;
-                    // case "/addtask":
-                    //     AddTask(botClient, update.Message.Chat);
-                    //     break;
                     case "/showtasks":
-                        ShowTasks(botClient, update.Message.Chat);
+                        ShowTasks(botClient, update.Message.Chat, currentUser);
                         break;
                     case "/showalltasks":
-                        ShowAllTasks(botClient, update.Message.Chat);
+                        ShowAllTasks(botClient, update.Message.Chat, currentUser);
                         break;
-                    // case "/removetask":
-                    //     RemoveTask(botClient, update.Message.Chat);
-                    //     break;
-                    // case "/completetask":
-                    //     CompleteTask(botClient, update.Message.Chat);
-                    //     break;
                     case "/exit":
-                        Exit(botClient, update.Message.Chat);
+                        Exit(botClient, update.Message.Chat, currentUser);
                         return;
                     default: botClient.SendMessage(update.Message.Chat, "Неизвестная команда"); break;
                 }
             }
-            ShowCurrentMenu(botClient, update.Message.Chat);
+            ShowCurrentMenu(botClient, update.Message.Chat, currentUser);
         }
         
         catch (ArgumentException ex)
         {
             botClient.SendMessage(update.Message.Chat,ex.Message);
         }
-        catch (ToDoService.TaskCountLimitException ex)
+        catch (TaskCountLimitException ex)
         {
             botClient.SendMessage(update.Message.Chat,ex.Message);
         }
-        catch (ToDoService.TaskLengthLimitException ex)
+        catch (TaskLengthLimitException ex)
         {
             botClient.SendMessage(update.Message.Chat,ex.Message);
         }
-        catch (ToDoService.DuplicateTaskException ex)
+        catch (DuplicateTaskException ex)
         {
             botClient.SendMessage(update.Message.Chat,ex.Message);
-        }
-    }
-
-    static void InitializeSettings(ITelegramBotClient botClient, Chat chat)
-    {
-        while (true)
-        {
-            try
-            {
-                botClient.SendMessage(chat,"Введите максимально допустимое количество задач (от 1 до 100):");
-                var input = Console.ReadLine();
-                ProjectDz.Program.ValidateString(input);
-                maxTaskLimit = ProjectDz.Program.ParseAndValidateInt(input, minLengthTask, maxLengthTask);
-                break;
-            }
-            catch (ArgumentException ex)
-            {
-                botClient.SendMessage(chat, ex.Message);
-                botClient.SendMessage(chat,"Попробуйте еще раз.\n");
-            }
-        }
-
-        while (true)
-        {
-            try
-            {
-                botClient.SendMessage(chat,"Введите максимально допустимую длину задачи (от 1 до 100):");
-                var input = Console.ReadLine();
-                ProjectDz.Program.ValidateString(input);
-                maxTaskLength = ProjectDz.Program.ParseAndValidateInt(input, minLengthTask, maxLengthTask);
-                break;
-            }
-            catch (ArgumentException ex)
-            {
-                botClient.SendMessage(chat, ex.Message);
-                botClient.SendMessage(chat,"Попробуйте еще раз.\n");
-            }
         }
     }
     
@@ -166,11 +105,11 @@ public class UpdateHandler : IUpdateHandler
             throw new ArgumentException("Invalid Update object");
 
         var from = update.Message.From;
-        currentUser = _userService.GetUser(from.Id);
+        var user = _userService.GetUser(from.Id);
         
-        if (currentUser != null)
+        if (user != null)
         {
-            botClient.SendMessage(chat, $"Вы уже зарегистрированы: {currentUser.TelegramUserName}");
+            botClient.SendMessage(chat, $"Вы уже зарегистрированы: {user.TelegramUserName}");
             return;
         }
         
@@ -178,11 +117,11 @@ public class UpdateHandler : IUpdateHandler
             ? from.Username 
             : $"User-{from.Id}";
 
-        currentUser = _userService.RegisterUser(from.Id, userName);
+        user = _userService.RegisterUser(from.Id, userName);
         
-        botClient.SendMessage(chat,$"Добро пожаловать, {currentUser.TelegramUserName}!");
-        botClient.SendMessage(chat,$"Ваш ID: {currentUser.UserId}");
-        botClient.SendMessage(chat,$"Дата регистрации: {currentUser.RegisteredAt}");
+        botClient.SendMessage(chat,$"Добро пожаловать, {user.TelegramUserName}!");
+        botClient.SendMessage(chat,$"Ваш ID: {user.UserId}");
+        botClient.SendMessage(chat,$"Дата регистрации: {user.RegisteredAt}");
     }
     
     static void Help(ITelegramBotClient botClient, Chat chat)
@@ -197,31 +136,32 @@ public class UpdateHandler : IUpdateHandler
         botClient.SendMessage(chat,"/completetask - отметить задачу как завершенную");
     }
 
-    static void Info(ITelegramBotClient botClient, Chat chat)
+    void Info(ITelegramBotClient botClient, Chat chat, ToDoUser user)
     {
-        botClient.SendMessage(chat, string.IsNullOrWhiteSpace(name)
+        botClient.SendMessage(chat, string.IsNullOrWhiteSpace(user.TelegramUserName)
             ? "Версия бота 1.0, дата создания 25.05.2025"
-            : $"{currentUser.TelegramUserName}, версия бота 1.0, дата создания 25.05.2025");
+            : $"{user.TelegramUserName}, версия бота 1.0, дата создания 25.05.2025");
     }
     
-    void AddTask(ITelegramBotClient botClient, Chat chat, string taskName)
+    void AddTask(ITelegramBotClient botClient, Chat chat, string taskName, ToDoUser user)
     {
         if (string.IsNullOrWhiteSpace(taskName))
         {
-            botClient.SendMessage(chat,$"{currentUser.TelegramUserName}, описание задачи не может быть пустым");
+            botClient.SendMessage(chat,$"{user.TelegramUserName}, описание задачи не может быть пустым");
             return;
         }
 
-        var newTask = _toDoService.Add(currentUser, taskName);
+        var newTask = _toDoService.Add(user, taskName);
         
-        botClient.SendMessage(chat,$"{currentUser.TelegramUserName}, задача добавлена!");
+        botClient.SendMessage(chat,$"{user.TelegramUserName}, задача добавлена!");
     }
     
-    static void ShowTasks(ITelegramBotClient botClient, Chat chat)
+    void ShowTasks(ITelegramBotClient botClient, Chat chat, ToDoUser user)
     {
+        var tasks = _toDoService.GetActiveByUserId(user.UserId);
         if (tasks.Count == 0)
         {
-            botClient.SendMessage(chat,$"{currentUser.TelegramUserName}, список задач пуст");
+            botClient.SendMessage(chat,$"{user.TelegramUserName}, список задач пуст");
             return;
         }
         else
@@ -239,11 +179,12 @@ public class UpdateHandler : IUpdateHandler
         }
     }
     
-    static void ShowAllTasks(ITelegramBotClient botClient, Chat chat)
+    void ShowAllTasks(ITelegramBotClient botClient, Chat chat, ToDoUser user)
     {
+        var tasks = _toDoService.GetActiveByUserId(user.UserId);
         if (tasks.Count == 0)
         {
-            botClient.SendMessage(chat,$"{currentUser.TelegramUserName}, список задач пуст");
+            botClient.SendMessage(chat,$"{user.TelegramUserName}, список задач пуст");
             return;
         }
         else
@@ -261,25 +202,18 @@ public class UpdateHandler : IUpdateHandler
         }
     }
     
-    void RemoveTask(ITelegramBotClient botClient, Chat chat,  string taskNumStr)
+    void RemoveTask(ITelegramBotClient botClient, Chat chat,  string taskNumStr, ToDoUser user)
     {
+        var tasks = _toDoService.GetActiveByUserId(user.UserId);
         if (tasks.Count == 0)
         {
-            botClient.SendMessage(chat,$"{currentUser.TelegramUserName}, список задач пуст. Нечего удалять.");
+            botClient.SendMessage(chat,$"{user.TelegramUserName}, список задач пуст. Нечего удалять.");
             return;
         }
-
-        // ShowTasks(botClient, chat);
-        //
-        // botClient.SendMessage(chat,$"{currentUser.TelegramUserName}, введите номер задачи для удаления:");
-        // var input = Console.ReadLine();
-        // ProjectDz.Program.ValidateString(input);
-        //
-        // var i = !int.TryParse(taskNumStr, out int taskNumber);
-
+        
         if (!int.TryParse(taskNumStr, out int taskNumber) || taskNumber < 1 || taskNumber > tasks.Count)
         {
-            botClient.SendMessage(chat,$"{currentUser.TelegramUserName}, ошибка, " +
+            botClient.SendMessage(chat,$"{user.TelegramUserName}, ошибка, " +
                                        $"введите корректный номер от 1 до {tasks.Count}!");
             return;
         }
@@ -300,25 +234,27 @@ public class UpdateHandler : IUpdateHandler
         botClient.SendMessage(chat, $"Задача '{taskIdStr}' отмечена завершенной");
     }
 
-    public static void Exit(ITelegramBotClient botClient, Chat chat)
+    public static void Exit(ITelegramBotClient botClient, Chat chat, ToDoUser user)
     {
-        botClient.SendMessage(chat,string.IsNullOrEmpty(name)
+        botClient.SendMessage(chat,string.IsNullOrEmpty(user.TelegramUserName)
             ? "До свидания!"
-            : $"{currentUser.TelegramUserName}, до свидания!");
+            : $"{user.TelegramUserName}, до свидания!");
     }
     
-    static void ShowCurrentMenu(ITelegramBotClient botClient, Chat chat)
+    static void ShowCurrentMenu(ITelegramBotClient botClient, Chat chat, ToDoUser user)
     {
-        botClient.SendMessage(chat,string.IsNullOrWhiteSpace(name)
-            ? "Добро пожаловать в бота\nДоступные команды:"
-            : $"{name}, доступные команды");
+        string greeting = user == null 
+            ? "Добро пожаловать в бота\nДоступные команды:" 
+            : $"{user.TelegramUserName}, доступные команды";
+        
+        botClient.SendMessage(chat, greeting);
 
-        if (string.IsNullOrWhiteSpace(name))
+        if (user == null)
         {
             botClient.SendMessage(chat,"/start - начать работу");
         }
 
-        if (!string.IsNullOrWhiteSpace(name))
+        else
         {
             botClient.SendMessage(chat,"/addtask - добавить задачу");
             botClient.SendMessage(chat,"/showtasks - показать список текущих задач");
