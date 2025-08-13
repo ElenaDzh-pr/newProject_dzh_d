@@ -20,10 +20,14 @@ class Program
             Console.WriteLine("Введите максимальную длину задачи (1-100):");
         } while (!int.TryParse(Console.ReadLine(), out maxLength) || maxLength < 1 || maxLength > 100);
         
-        var userService = new UserService();
+        var userRepository = new InMemoryUserRepository();
+        var toDoRepository = new InMemoryToDoRepository();
+        
+        var userService = new UserService(userRepository);
         var botClient = new ConsoleBotClient();
-        var toDoService = new ToDoService(maxLimit, maxLength);
-        var handler = new UpdateHandler(userService, toDoService);
+        var toDoService = new ToDoService(toDoRepository, maxLimit, maxLength);
+        var reportService = new ToDoReportService(toDoRepository);
+        var handler = new UpdateHandler(userService, toDoService, reportService);
         botClient.StartReceiving(handler);
             
         while (true)

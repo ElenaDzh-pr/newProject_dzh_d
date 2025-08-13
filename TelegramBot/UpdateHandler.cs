@@ -6,11 +6,13 @@ public class UpdateHandler : IUpdateHandler
 {
     private readonly IUserService _userService;
     private readonly IToDoService _toDoService;
-
-    public UpdateHandler(IUserService userService, IToDoService toDoService)
+    private readonly IToDoReportService _toDoReportService;
+   
+    public UpdateHandler(IUserService userService, IToDoService toDoService, IToDoReportService toDoReportService)
     {
         _userService = userService;
         _toDoService = toDoService;
+        _toDoReportService = toDoReportService;
     }
     
     public void HandleUpdateAsync(ITelegramBotClient botClient, Update update)
@@ -52,6 +54,11 @@ public class UpdateHandler : IUpdateHandler
                 var taskIdStr = update.Message.Text.Substring("/completetask".Length).Trim();
                 CompleteTask(botClient, update.Message.Chat, taskIdStr);
             }
+            else if (update.Message.Text?.ToLower().StartsWith("/find") == true)
+            {
+                var taskName = update.Message.Text.Substring("/find".Length).Trim();
+                FindTask(botClient, update.Message.Chat, currentUser, taskName);
+            }
             else
             {
 
@@ -71,6 +78,9 @@ public class UpdateHandler : IUpdateHandler
                         break;
                     case "/showalltasks":
                         ShowAllTasks(botClient, update.Message.Chat, currentUser);
+                        break;
+                    case "/report":
+                        ShowReport(botClient, update.Message.Chat, currentUser);
                         break;
                     case "/exit":
                         Exit(botClient, update.Message.Chat, currentUser);
@@ -134,6 +144,8 @@ public class UpdateHandler : IUpdateHandler
         botClient.SendMessage(chat,"/showalltasks - показать список всех задач");
         botClient.SendMessage(chat,"/removetask - удалить задачу из текущего списка");
         botClient.SendMessage(chat,"/completetask - отметить задачу как завершенную");
+        botClient.SendMessage(chat,"/report - показать статистику по задачам");
+        botClient.SendMessage(chat,"/find - найти задачу по названию");
     }
 
     void Info(ITelegramBotClient botClient, Chat chat, ToDoUser user)
@@ -176,6 +188,30 @@ public class UpdateHandler : IUpdateHandler
                                                $"{task.Id}");
                 }
             }
+        }
+    }
+    
+    void FindTask(ITelegramBotClient botClient, Chat chat, ToDoUser user, string taskName)
+    {
+        if (string.IsNullOrWhiteSpace(taskName))
+        {
+            botClient.SendMessage(chat, "Укажите текст для поиска: /find Текст");
+            return;
+        }
+        
+        var tasks = _toDoService.Find(user, taskName);
+        if (tasks.Count == 0)
+        {
+            botClient.SendMessage(chat, $"{user.TelegramUserName}, задачи начинающиеся на '{taskName}' не найдены");
+            return;
+        }
+        
+        botClient.SendMessage(chat, $"Найденные задачи ({taskName}):");
+        
+        foreach (var task in tasks)
+        {
+            botClient.SendMessage(chat, 
+                $"{task.Name} - {task.CreatedAt.ToLocalTime()} - {task.Id}");
         }
     }
     
@@ -261,12 +297,22 @@ public class UpdateHandler : IUpdateHandler
             botClient.SendMessage(chat,"/showalltasks - показать список всех задач");
             botClient.SendMessage(chat,"/removetask - удалить задачу");
             botClient.SendMessage(chat,"/completetask - завершить задачу");
+            botClient.SendMessage(chat,"/report - показать статистику по задачам");
+            botClient.SendMessage(chat,"/find - найти задачу по названию");
         }
 
         botClient.SendMessage(chat,"/help - справка");
         botClient.SendMessage(chat,"/info - информация о боте");
         botClient.SendMessage(chat,"/exit - выход");
         botClient.SendMessage(chat,"Введите команду: ");
+    }
+    
+    private void ShowReport(ITelegramBotClient botClient, Chat chat, ToDoUser user)
+    {
+        var (total, completed, active, generatedAt) = _toDoReportService.GetUserStats(user.UserId);
+        botClient.SendMessage(chat, 
+            $"Статистика по задачам на {generatedAt:dd.MM.yyyy HH:mm:ss}\n" +
+            $"Всего: {total}; Завершенных: {completed}; Активных: {active};");
     }
     
 }
