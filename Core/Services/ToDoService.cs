@@ -4,8 +4,8 @@ public class ToDoService  : IToDoService
 {
     private readonly IToDoRepository _toDoRepository;
     private readonly List<ToDoItem> _items = new List<ToDoItem>();
-    private int _maxTaskLimit;
-    private int _maxTaskLength;
+    private readonly int _maxTaskLimit;
+    private readonly int _maxTaskLength;
     
     public ToDoService(IToDoRepository toDoRepository, int maxTaskLimit, int maxTaskLength)
     {
