@@ -8,7 +8,7 @@ class Program
     static int maxTaskLimit = 0;
     static int maxTaskLength = 0;
 
-    static void Main(string[] args)
+    static async Task Main(string[] args)
     {
         int maxLimit;
         do {
@@ -28,25 +28,27 @@ class Program
         var toDoService = new ToDoService(toDoRepository, maxLimit, maxLength);
         var reportService = new ToDoReportService(toDoRepository);
         var handler = new UpdateHandler(userService, toDoService, reportService);
-        botClient.StartReceiving(handler);
+        handler.OnHandleUpdateStarted += message => 
+            Console.WriteLine($"Началась обработка сообщения '{message}'");
+        handler.OnHandleUpdateCompleted += message => 
+            Console.WriteLine($"Закончилась обработка сообщения '{message}'");
             
-        while (true)
+        //while (true)
+        try
         {
-            try
-            {
-                var command = Console.ReadLine();
-            }
-            
-            catch (Exception ex)
-            {
-                Console.WriteLine("Произошла непредвиденная ошибка:");
-                Console.WriteLine($"Тип: {ex.GetType()}");
-                Console.WriteLine($"Сообщение: {ex.Message}");
-                Console.WriteLine($"StackTrace: {ex.StackTrace}");
-                Console.WriteLine(ex.InnerException != null 
-                    ? $"InnerException: {ex.InnerException.GetType()}: {ex.InnerException.Message}" 
-                    : "InnerException: null");
-            }
+            using var cts = new CancellationTokenSource();
+            await botClient.StartReceiving(handler, cts.Token);
+        
+            Console.WriteLine("Бот запущен. Нажмите Enter для остановки...");
+            Console.ReadLine();
+        
+            cts.Cancel();
+        }
+        finally
+        {
+            // отписка от событий
+            handler.OnHandleUpdateStarted -= null;
+            handler.OnHandleUpdateCompleted -= null;
         }
     }
 

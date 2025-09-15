@@ -9,7 +9,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\Desktop\C-Sharp-Basic\Homeworks\05.2 ООП интерфейсы\Otus.ToDoList.ConsoleBot\Otus.ToDoList.ConsoleBot.csproj" />
+      <ProjectReference Include="..\..\Desktop\07 Асинхронность, делегаты и события\Otus.ToDoList.ConsoleBotNew\Otus.ToDoList.ConsoleBotNew.csproj" />
     </ItemGroup>
 
 </Project>
