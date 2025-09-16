@@ -18,4 +18,19 @@ public class InMemoryUserRepository: IUserRepository
     {
         _users.Add(user);
     }
+
+    public Task<ToDoUser?> GetUserAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        throw new NotImplementedException();
+    }
+
+    public ToDoUser? GetUserByTelegramUserIdAsync(long telegramUserId, CancellationToken cancellationToken)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task AddAsync(ToDoUser user)
+    {
+        throw new NotImplementedException();
+    }
 }

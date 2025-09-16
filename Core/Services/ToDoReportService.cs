@@ -11,7 +11,7 @@ public class ToDoReportService: IToDoReportService
 
     public (int total, int completed, int active, DateTime generatedAt) GetUserStats(Guid userId)
     {
-        var allTasks = _toDoRepository.GetAllByUserId(userId);
+        var allTasks = _toDoRepository.GetAllByUserIdAsync(userId, CancellationToken.None);
         var total = allTasks.Count;
         var completed = allTasks.Count(t => t.State == ToDoItem.ToDoItemState.Completed);
         var active = allTasks.Count(t => t.State == ToDoItem.ToDoItemState.Active);

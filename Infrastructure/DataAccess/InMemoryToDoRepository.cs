@@ -4,13 +4,13 @@ public class InMemoryToDoRepository:  IToDoRepository
 {
     private readonly List<ToDoItem> _items = new List<ToDoItem>();
     
-    public async Task<IReadOnlyList<ToDoItem>> GetAllByUserIdAsync(Guid userId, CancellationToken cancellationToken)
+    public async IReadOnlyList<ToDoItem> GetAllByUserIdAsync(Guid userId, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
         return _items.Where(item => item.User.UserId == userId).ToList().AsReadOnly();
     }
 
-    public async Task<IReadOnlyList<ToDoItem>> GetActiveByUserIdAsync(Guid userId, CancellationToken cancellationToken)
+    public async IReadOnlyList<ToDoItem> GetActiveByUserIdAsync(Guid userId, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
         return _items.Where(item => 
@@ -31,7 +31,7 @@ public class InMemoryToDoRepository:  IToDoRepository
         _items.Add(item);
     }
 
-    public async Task UpdateAsync(ToDoItem item, CancellationToken cancellationToken)
+    public async Task UpdateAsync(Task<ToDoItem?> item, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
         var existingItem = await GetAsync(item.Id, cancellationToken);
@@ -53,7 +53,7 @@ public class InMemoryToDoRepository:  IToDoRepository
         }
     }
 
-    public async Task<bool> ExistsByNameAsync(Guid userId, string name, CancellationToken cancellationToken)
+    public async bool ExistsByNameAsync(Guid userId, string name, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
         return _items.Any(item => 
