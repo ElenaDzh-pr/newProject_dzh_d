@@ -2,11 +2,11 @@ namespace ProjectDz;
 
 public interface IToDoService
 {
-    IReadOnlyList<ToDoItem> GetAllByUserId(Guid userId);
+    Task<IReadOnlyList<ToDoItem>> GetAllByUserIdAsync(Guid userId);
     //Возвращает ToDoItem для UserId со статусом Active
-    IReadOnlyList<ToDoItem> GetActiveByUserId(Guid userId);
-    ToDoItem Add(ToDoUser user, string name);
-    void MarkCompleted(Guid id);
-    void Delete(Guid id);
-    IReadOnlyList<ToDoItem> Find(ToDoUser user, string namePrefix);
+    Task<IReadOnlyList<ToDoItem>> GetActiveByUserIdAsync(Guid userId);
+    Task<ToDoItem> AddAsync(ToDoUser user, string name);
+    Task MarkCompletedAsync(Guid id);
+    Task DeleteAsync(Guid id);
+    Task<IReadOnlyList<ToDoItem>> FindAsync(ToDoUser user, string namePrefix);
 }

@@ -9,9 +9,9 @@ public class ToDoReportService: IToDoReportService
         _toDoRepository = toDoRepository ?? throw new ArgumentNullException(nameof(toDoRepository));
     }
 
-    public (int total, int completed, int active, DateTime generatedAt) GetUserStats(Guid userId)
+    public async Task<(int total, int completed, int active, DateTime generatedAt)> GetUserStatsAsync(Guid userId)
     {
-        var allTasks = _toDoRepository.GetAllByUserIdAsync(userId, CancellationToken.None);
+        var allTasks = await _toDoRepository.GetAllByUserIdAsync(userId, CancellationToken.None);
         var total = allTasks.Count;
         var completed = allTasks.Count(t => t.State == ToDoItem.ToDoItemState.Completed);
         var active = allTasks.Count(t => t.State == ToDoItem.ToDoItemState.Active);

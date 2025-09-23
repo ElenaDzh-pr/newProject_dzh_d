@@ -1,16 +1,23 @@
+using System.Collections.ObjectModel;
+
 namespace ProjectDz;
 
 public class InMemoryToDoRepository:  IToDoRepository
 {
     private readonly List<ToDoItem> _items = new List<ToDoItem>();
     
-    public async IReadOnlyList<ToDoItem> GetAllByUserIdAsync(Guid userId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<ToDoItem>> GetAllByUserIdAsync(Guid userId, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
         return _items.Where(item => item.User.UserId == userId).ToList().AsReadOnly();
     }
 
-    public async IReadOnlyList<ToDoItem> GetActiveByUserIdAsync(Guid userId, CancellationToken cancellationToken)
+    Task<IReadOnlyList<ToDoItem>> IToDoRepository.GetActiveByUserIdAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task<ReadOnlyCollection<ToDoItem>> GetActiveByUserIdAsync(Guid userId, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
         return _items.Where(item => 
@@ -31,7 +38,7 @@ public class InMemoryToDoRepository:  IToDoRepository
         _items.Add(item);
     }
 
-    public async Task UpdateAsync(Task<ToDoItem?> item, CancellationToken cancellationToken)
+    public async Task UpdateAsync(ToDoItem item, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
         var existingItem = await GetAsync(item.Id, cancellationToken);
@@ -53,7 +60,7 @@ public class InMemoryToDoRepository:  IToDoRepository
         }
     }
 
-    public async bool ExistsByNameAsync(Guid userId, string name, CancellationToken cancellationToken)
+    public async Task<bool> ExistsByNameAsync(Guid userId, string name, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
         return _items.Any(item => 
@@ -67,6 +74,13 @@ public class InMemoryToDoRepository:  IToDoRepository
         return _items.Count(item => 
             item.User.UserId == userId &&
             item.State == ToDoItem.ToDoItemState.Active);
+    }
+
+    public async Task<ReadOnlyCollection<ToDoItem>> FindAsync(Guid userId, Func<ToDoItem, bool> predicate)
+    {
+        var userItems = await GetAllByUserIdAsync(userId, CancellationToken.None);
+        
+        return userItems.Where(predicate).ToList().AsReadOnly();
     }
 
     public async Task<IReadOnlyList<ToDoItem>> FindAsync(Guid userId, Func<ToDoItem, bool> predicate, 
