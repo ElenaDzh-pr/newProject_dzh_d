@@ -2,7 +2,7 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "новый проект_дз", "новый проект_дз.csproj", "{5273D100-A3BD-4FAE-8C46-CBFE0B824FC0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Otus.ToDoList.ConsoleBotNew", "..\..\Desktop\07 Асинхронность, делегаты и события\Otus.ToDoList.ConsoleBotNew\Otus.ToDoList.ConsoleBotNew.csproj", "{0E4C8D38-546D-4DDB-82D4-572721E47B9C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Otus.ToDoList.ConsoleBot", "..\..\Desktop\07 Асинхронность, делегаты и события\Otus.ToDoList.ConsoleBot\Otus.ToDoList.ConsoleBot.csproj", "{0E4C8D38-546D-4DDB-82D4-572721E47B9C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
