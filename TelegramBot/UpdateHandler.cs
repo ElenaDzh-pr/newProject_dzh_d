@@ -26,7 +26,7 @@ public class UpdateHandler : IUpdateHandler
         try
         {
             var currentUser = update.Message?.From != null 
-                ? _userService.GetUser(update.Message.From.Id) 
+                ? await Task.Run(() => _userService.GetUserAsync(update.Message.From.Id, cancellationToken))
                 : null;
             
             if (update.Message.Text?.ToLower() == "/start")
@@ -127,7 +127,7 @@ public class UpdateHandler : IUpdateHandler
             throw new ArgumentException("Invalid Update object");
 
         var from = update.Message.From;
-        var user = _userService.GetUser(from.Id);
+        var user = await _userService.GetUserAsync(from.Id, cancellationToken);
         
         if (user != null)
         {
@@ -139,7 +139,7 @@ public class UpdateHandler : IUpdateHandler
             ? from.Username 
             : $"User-{from.Id}";
 
-        user = _userService.RegisterUser(from.Id, userName);
+        user = await _userService.RegisterUserAsync(from.Id, userName, cancellationToken);
         
         await botClient.SendMessage(chat,$"Добро пожаловать, {user.TelegramUserName}!", cancellationToken);
         await botClient.SendMessage(chat,$"Ваш ID: {user.UserId}", cancellationToken);
@@ -341,10 +341,10 @@ public class UpdateHandler : IUpdateHandler
             $"Всего: {total}; Завершенных: {completed}; Активных: {active};", cancellationToken);
     }
     
-    public Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
+    public async Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
     {
-        Console.WriteLine($"Error: {exception.Message}");
-        return Task.CompletedTask;
+        await Console.Out.WriteLineAsync($"Error: {exception.Message}");
+        await Console.Out.WriteLineAsync($"Stack trace: {exception.StackTrace}");
     }
     
 }
