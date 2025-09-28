@@ -1,5 +1,4 @@
 ﻿using Otus.ToDoList.ConsoleBot;
-using Otus.ToDoList.ConsoleBot.Types;
 
 namespace ProjectDz;
 
@@ -28,16 +27,18 @@ class Program
         var toDoService = new ToDoService(toDoRepository, maxLimit, maxLength);
         var reportService = new ToDoReportService(toDoRepository);
         var handler = new UpdateHandler(userService, toDoService, reportService);
+        
         handler.OnHandleUpdateStarted += message => 
             Console.WriteLine($"Началась обработка сообщения '{message}'");
         handler.OnHandleUpdateCompleted += message => 
             Console.WriteLine($"Закончилась обработка сообщения '{message}'");
-            
-        //while (true)
+        
         try
         {
             using var cts = new CancellationTokenSource();
-            await botClient.StartReceiving(handler, cts.Token);
+            var cancellationToken = cts.Token;
+            
+            await botClient.StartReceiving(handler, cancellationToken);
         
             Console.WriteLine("Бот запущен. Нажмите Enter для остановки...");
             Console.ReadLine();
@@ -46,7 +47,6 @@ class Program
         }
         finally
         {
-            // отписка от событий
             handler.OnHandleUpdateStarted -= null;
             handler.OnHandleUpdateCompleted -= null;
         }
