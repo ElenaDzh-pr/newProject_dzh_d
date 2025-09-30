@@ -9,7 +9,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\Desktop\07 Асинхронность, делегаты и события\Otus.ToDoList.ConsoleBot\Otus.ToDoList.ConsoleBot.csproj" />
+        <PackageReference Include="Telegram.Bot" Version="22.7.3-dev.3" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\Downloads\Telegram.Bot-master\src\Telegram.Bot\Telegram.Bot.csproj" />
     </ItemGroup>
 
 </Project>

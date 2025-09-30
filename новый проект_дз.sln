@@ -2,7 +2,7 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "новый проект_дз", "новый проект_дз.csproj", "{5273D100-A3BD-4FAE-8C46-CBFE0B824FC0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Otus.ToDoList.ConsoleBot", "..\..\Desktop\07 Асинхронность, делегаты и события\Otus.ToDoList.ConsoleBot\Otus.ToDoList.ConsoleBot.csproj", "{0E4C8D38-546D-4DDB-82D4-572721E47B9C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Telegram.Bot", "..\..\Downloads\Telegram.Bot-master\src\Telegram.Bot\Telegram.Bot.csproj", "{131C9D7A-4897-4C8B-8D8E-9027B63441AD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -14,9 +14,9 @@ Global
 		{5273D100-A3BD-4FAE-8C46-CBFE0B824FC0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5273D100-A3BD-4FAE-8C46-CBFE0B824FC0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5273D100-A3BD-4FAE-8C46-CBFE0B824FC0}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0E4C8D38-546D-4DDB-82D4-572721E47B9C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0E4C8D38-546D-4DDB-82D4-572721E47B9C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0E4C8D38-546D-4DDB-82D4-572721E47B9C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0E4C8D38-546D-4DDB-82D4-572721E47B9C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{131C9D7A-4897-4C8B-8D8E-9027B63441AD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{131C9D7A-4897-4C8B-8D8E-9027B63441AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{131C9D7A-4897-4C8B-8D8E-9027B63441AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{131C9D7A-4897-4C8B-8D8E-9027B63441AD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
