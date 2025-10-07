@@ -1,4 +1,7 @@
-﻿using Otus.ToDoList.ConsoleBot;
+﻿using Telegram.Bot;
+using Telegram.Bot.Polling;
+using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 
 namespace ProjectDz;
 
@@ -23,9 +26,17 @@ class Program
         var toDoRepository = new InMemoryToDoRepository();
         
         var userService = new UserService(userRepository);
-        var botClient = new ConsoleBotClient();
         var toDoService = new ToDoService(toDoRepository, maxLimit, maxLength);
         var reportService = new ToDoReportService(toDoRepository);
+        
+        var token = Environment.GetEnvironmentVariable("TELEGRAM_BOT_TOKE_EX12");
+        if (string.IsNullOrEmpty(token))
+        {
+            Console.WriteLine("Ошибка: TELEGRAM_BOT_TOKE_EX12 не установлен");
+            return;
+        }
+        var botClient = new TelegramBotClient(token);
+        
         var handler = new UpdateHandler(userService, toDoService, reportService);
         
         handler.OnHandleUpdateStarted += message => 
@@ -33,23 +44,60 @@ class Program
         handler.OnHandleUpdateCompleted += message => 
             Console.WriteLine($"Закончилась обработка сообщения '{message}'");
         
-        try
+        var receiverOptions = new ReceiverOptions
         {
-            using var cts = new CancellationTokenSource();
-            var cancellationToken = cts.Token;
-            
-            await botClient.StartReceiving(handler, cancellationToken);
+            AllowedUpdates = [UpdateType.Message],
+            DropPendingUpdates = true
+        };
         
-            Console.WriteLine("Бот запущен. Нажмите Enter для остановки...");
-            Console.ReadLine();
+        using var cts = new CancellationTokenSource();
+        botClient.StartReceiving(handler, receiverOptions, cts.Token);
+
+        var me = await botClient.GetMe();
+        Console.WriteLine($"{me.FirstName} запущен!");
         
-            cts.Cancel();
-        }
-        finally
+        await SetBotCommands(botClient, cts.Token);
+        
+        Console.WriteLine("Нажмите клавишу A для выхода");
+        
+        while (!cts.Token.IsCancellationRequested)
         {
-            handler.OnHandleUpdateStarted -= null;
-            handler.OnHandleUpdateCompleted -= null;
+            var key = Console.ReadKey(intercept: true);
+            if (key.Key == ConsoleKey.A)
+            {
+                Console.WriteLine("\nЗавершение работы...");
+                cts.Cancel();
+                break;
+            }
+            else
+            {
+                Console.WriteLine($"\nБот: {me.FirstName} (@{me.Username})");
+                Console.WriteLine("ID: " + me.Id);
+                Console.WriteLine("Нажмите клавишу A для выхода");
+            }
         }
+        
+        await Task.Delay(1000);
+        Console.WriteLine("Бот остановлен.");
+    }
+    
+    static async Task SetBotCommands(ITelegramBotClient botClient, CancellationToken cancellationToken)
+    {
+        var commands = new[]
+        {
+            new BotCommand { Command = "start", Description = "Начать работу с ботом" },
+            new BotCommand { Command = "info", Description = "Получить информацию о боте" },
+            new BotCommand { Command = "addtask", Description = "Добавить задачу в список задач" },
+            new BotCommand { Command = "showtasks", Description = "Показать список текущих задач" },
+            new BotCommand { Command = "showalltasks", Description = "Показать список всех задач" },
+            new BotCommand { Command = "removetask", Description = "Удалить задачу из текущего списка" },
+            new BotCommand { Command = "completetask", Description = "Отметить задачу как завершенную" },
+            new BotCommand { Command = "report", Description = "Показать статистику по задачам" },
+            new BotCommand { Command = "find", Description = "Найти задачу" },
+            new BotCommand { Command = "exit", Description = "Выход" }
+        };
+        
+        await botClient.SetMyCommands(commands, cancellationToken: cancellationToken);
     }
 
     public static int ParseAndValidateInt(string? str, int min, int max)
