@@ -13,6 +13,7 @@ public class UpdateHandler : IUpdateHandler
     private readonly IUserService _userService;
     private readonly IToDoService _toDoService;
     private readonly IToDoReportService _toDoReportService;
+    private readonly Dictionary<long, bool> _waitingForTaskDescription = new();
     public event MessageEventHandler OnHandleUpdateStarted;
     public event MessageEventHandler OnHandleUpdateCompleted;
    
@@ -50,9 +51,26 @@ public class UpdateHandler : IUpdateHandler
                 return;
             }
             
+            if (_waitingForTaskDescription.ContainsKey(update.Message.Chat.Id))
+            {
+                var taskName = update.Message.Text;
+                await AddTaskAsync(botClient, update.Message.Chat, taskName, currentUser, cancellationToken);
+                _waitingForTaskDescription.Remove(update.Message.Chat.Id);
+                return;
+            }
+            
             if (update.Message.Text?.ToLower().StartsWith("/addtask") == true)
             {
                 var taskName = update.Message.Text.Substring("/addtask".Length).Trim();
+                if (string.IsNullOrWhiteSpace(taskName))
+                {
+                    _waitingForTaskDescription[update.Message.Chat.Id] = true;
+                    await botClient.SendMessage(
+                        chatId: update.Message.Chat.Id,
+                        text: "Введите описание задачи:",
+                        cancellationToken: cancellationToken);
+                    return;
+                }
                 await AddTaskAsync(botClient, update.Message.Chat, taskName, currentUser, cancellationToken);
             }
             else if (update.Message.Text?.ToLower().StartsWith("/removetask") == true)

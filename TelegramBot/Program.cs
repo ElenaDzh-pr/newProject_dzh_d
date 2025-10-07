@@ -22,8 +22,8 @@ class Program
             Console.WriteLine("Введите максимальную длину задачи (1-100):");
         } while (!int.TryParse(Console.ReadLine(), out maxLength) || maxLength < 1 || maxLength > 100);
         
-        var userRepository = new InMemoryUserRepository();
-        var toDoRepository = new InMemoryToDoRepository();
+        var userRepository = new FileUserRepository("Data/Users");
+        var toDoRepository = new FileToDoRepository("Data/ToDoItems");
         
         var userService = new UserService(userRepository);
         var toDoService = new ToDoService(toDoRepository, maxLimit, maxLength);
