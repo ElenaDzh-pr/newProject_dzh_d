@@ -14,14 +14,23 @@ public class UpdateHandler : IUpdateHandler
     private readonly IToDoService _toDoService;
     private readonly IToDoReportService _toDoReportService;
     private readonly Dictionary<long, bool> _waitingForTaskDescription = new();
+    private readonly IEnumerable<IScenario> _scenarios;
+    private readonly IScenarioContextRepository _contextRepository;
     public event MessageEventHandler OnHandleUpdateStarted;
     public event MessageEventHandler OnHandleUpdateCompleted;
    
-    public UpdateHandler(IUserService userService, IToDoService toDoService, IToDoReportService toDoReportService)
+    public UpdateHandler(
+        IUserService userService, 
+        IToDoService toDoService, 
+        IToDoReportService toDoReportService,
+        IEnumerable<IScenario> scenarios,
+        IScenarioContextRepository contextRepository)
     {
         _userService = userService;
         _toDoService = toDoService;
         _toDoReportService = toDoReportService;
+        _scenarios = scenarios;
+        _contextRepository = contextRepository;
     }
     
     public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, 
@@ -31,6 +40,35 @@ public class UpdateHandler : IUpdateHandler
         
         try
         {
+            if (update.Message.Text?.ToLower() == "/cancel")
+            {
+                var context = await _contextRepository.GetContext(update.Message.Chat.Id, cancellationToken);
+                if (context != null)
+                {
+                    await _contextRepository.ResetContext(update.Message.Chat.Id, cancellationToken);
+                    await botClient.SendMessage(
+                        chatId: update.Message.Chat.Id,
+                        text: "Сценарий отменен",
+                        replyMarkup: GetMainKeyboard(),
+                        cancellationToken: cancellationToken);
+                }
+                else
+                {
+                    await botClient.SendMessage(
+                        chatId: update.Message.Chat.Id,
+                        text: "Нет активного сценария для отмены",
+                        replyMarkup: GetMainKeyboard(),
+                        cancellationToken: cancellationToken);
+                }
+                return;
+            }
+            var existingContext = await _contextRepository.GetContext(update.Message.Chat.Id, cancellationToken);
+            if (existingContext != null)
+            {
+                await ProcessScenario(botClient, existingContext, update, cancellationToken);
+                return;
+            }
+            
             var currentUser = update.Message?.From != null 
                 ? await Task.Run(() => _userService.GetUserAsync(update.Message.From.Id, cancellationToken))
                 : null;
@@ -61,17 +99,15 @@ public class UpdateHandler : IUpdateHandler
             
             if (update.Message.Text?.ToLower().StartsWith("/addtask") == true)
             {
-                var taskName = update.Message.Text.Substring("/addtask".Length).Trim();
-                if (string.IsNullOrWhiteSpace(taskName))
+                var scenarioContext = new ScenarioContext(update.Message.Chat.Id, ScenarioContext.ScenarioType.AddTask)
                 {
-                    _waitingForTaskDescription[update.Message.Chat.Id] = true;
-                    await botClient.SendMessage(
-                        chatId: update.Message.Chat.Id,
-                        text: "Введите описание задачи:",
-                        cancellationToken: cancellationToken);
-                    return;
-                }
-                await AddTaskAsync(botClient, update.Message.Chat, taskName, currentUser, cancellationToken);
+                    UserId = update.Message.Chat.Id
+                };
+                
+                await _contextRepository.SetContext(scenarioContext.UserId, scenarioContext, cancellationToken);
+                
+                await ProcessScenario(botClient, scenarioContext, update, cancellationToken);
+                return;
             }
             else if (update.Message.Text?.ToLower().StartsWith("/removetask") == true)
             {
@@ -200,6 +236,7 @@ public class UpdateHandler : IUpdateHandler
         await botClient.SendMessage(chat.Id,"/completetask - отметить задачу как завершенную", cancellationToken: cancellationToken);
         await botClient.SendMessage(chat.Id,"/report - показать статистику по задачам", cancellationToken: cancellationToken);
         await botClient.SendMessage(chat.Id,"/find - найти задачу по названию", cancellationToken: cancellationToken);
+        await botClient.SendMessage(chat.Id,"/cancel - отменить текущий сценарий", cancellationToken: cancellationToken);
     }
 
     async Task InfoAsync(ITelegramBotClient botClient, Chat chat, ToDoUser user, CancellationToken cancellationToken)
@@ -219,7 +256,7 @@ public class UpdateHandler : IUpdateHandler
             return;
         }
 
-        var newTask = await _toDoService.AddAsync(user, taskName);
+        var newTask = await _toDoService.AddAsync(user, taskName, DateTime.Now.AddDays(7));
         
         await botClient.SendMessage(chat.Id,$"{user.TelegramUserName}, задача добавлена!", cancellationToken: cancellationToken);
     }
@@ -399,4 +436,35 @@ public class UpdateHandler : IUpdateHandler
         };
     }
     
+    private IScenario GetScenario(ScenarioContext.ScenarioType scenario)
+    {
+        var foundScenario = _scenarios.FirstOrDefault(s => s.CanHandle(scenario));
+        
+        if (foundScenario == null)
+        {
+            throw new InvalidOperationException($"Сценарий {scenario} не найден");
+        }
+        
+        return foundScenario;
+    }
+    
+    private async Task ProcessScenario(ITelegramBotClient botClient, ScenarioContext context, Update update, CancellationToken ct)
+    {
+        var scenario = GetScenario(context.CurrentScenario);
+        var result = await scenario.HandleMessageAsync(botClient, context, update, ct);
+        
+        if (result == ScenarioResult.Completed)
+        {
+            await _contextRepository.ResetContext(context.UserId, ct);
+            await botClient.SendMessage(
+                chatId: update.Message.Chat.Id,
+                text: "Сценарий завершен",
+                replyMarkup: GetMainKeyboard(),
+                cancellationToken: ct);
+        }
+        else
+        {
+            await _contextRepository.SetContext(context.UserId, context, ct);
+        }
+    }
 }
