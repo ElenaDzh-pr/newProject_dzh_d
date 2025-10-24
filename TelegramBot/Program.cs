@@ -28,6 +28,11 @@ class Program
         var userService = new UserService(userRepository);
         var toDoService = new ToDoService(toDoRepository, maxLimit, maxLength);
         var reportService = new ToDoReportService(toDoRepository);
+        var contextRepository = new InMemoryScenarioContextRepository();
+        var scenarios = new List<IScenario>
+        {
+            new AddTaskScenario(userService, toDoService)
+        };
         
         var token = Environment.GetEnvironmentVariable("TELEGRAM_BOT_TOKE_EX12");
         if (string.IsNullOrEmpty(token))
@@ -37,7 +42,7 @@ class Program
         }
         var botClient = new TelegramBotClient(token);
         
-        var handler = new UpdateHandler(userService, toDoService, reportService);
+        var handler = new UpdateHandler(userService, toDoService, reportService, scenarios, contextRepository);
         
         handler.OnHandleUpdateStarted += message => 
             Console.WriteLine($"Началась обработка сообщения '{message}'");

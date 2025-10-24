@@ -23,7 +23,7 @@ public class ToDoService : IToDoService
         return await _toDoRepository.GetActiveByUserIdAsync(userId, CancellationToken.None);
     }
 
-    public async Task<ToDoItem> AddAsync(ToDoUser user, string name)
+    public async Task<ToDoItem> AddAsync(ToDoUser user, string name, DateTime deadline)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -47,7 +47,7 @@ public class ToDoService : IToDoService
             throw new DuplicateTaskException(name);
         }
 
-        var newTask = new ToDoItem(user, name);
+        var newTask = new ToDoItem(user, name, deadline);
         await _toDoRepository.AddAsync(newTask, CancellationToken.None);
         return newTask;
     }
