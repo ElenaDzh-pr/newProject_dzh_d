@@ -256,7 +256,7 @@ public class UpdateHandler : IUpdateHandler
             return;
         }
 
-        var newTask = await _toDoService.AddAsync(user, taskName, DateTime.Now.AddDays(7));
+        var newTask = await _toDoService.AddAsync(user, taskName, DateTime.Now.AddDays(7), null);
         
         await botClient.SendMessage(chat.Id,$"{user.TelegramUserName}, задача добавлена!", cancellationToken: cancellationToken);
     }

@@ -80,7 +80,7 @@ public class AddTaskScenario: IScenario
                 var savedUser = (ToDoUser)context.Data["user"];
                 var taskName = (string)context.Data["taskName"];
                 
-                var newTask = await _toDoService.AddAsync(savedUser, taskName, deadline);
+                var newTask = await _toDoService.AddAsync(savedUser, taskName, deadline, null);
                 
                 await bot.SendMessage(
                     chatId: update.Message.Chat.Id,
