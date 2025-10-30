@@ -24,10 +24,13 @@ class Program
         
         var userRepository = new FileUserRepository("Data/Users");
         var toDoRepository = new FileToDoRepository("Data/ToDoItems");
+        var listRepository = new FileToDoListRepository("Data/ToDoLists");
         
         var userService = new UserService(userRepository);
         var toDoService = new ToDoService(toDoRepository, maxLimit, maxLength);
         var reportService = new ToDoReportService(toDoRepository);
+        var listService = new ToDoListService(listRepository);
+        
         var contextRepository = new InMemoryScenarioContextRepository();
         var scenarios = new List<IScenario>
         {
@@ -42,7 +45,7 @@ class Program
         }
         var botClient = new TelegramBotClient(token);
         
-        var handler = new UpdateHandler(userService, toDoService, reportService, scenarios, contextRepository);
+        var handler = new UpdateHandler(userService, toDoService, reportService, scenarios, contextRepository, listService);
         
         handler.OnHandleUpdateStarted += message => 
             Console.WriteLine($"Началась обработка сообщения '{message}'");
