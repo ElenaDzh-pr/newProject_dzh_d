@@ -34,7 +34,9 @@ class Program
         var contextRepository = new InMemoryScenarioContextRepository();
         var scenarios = new List<IScenario>
         {
-            new AddTaskScenario(userService, toDoService)
+            new AddTaskScenario(userService, toDoService),
+            new AddListScenario(userService, listService),
+            new DeleteListScenario(userService, listService, toDoService)
         };
         
         var token = Environment.GetEnvironmentVariable("TELEGRAM_BOT_TOKE_EX12");

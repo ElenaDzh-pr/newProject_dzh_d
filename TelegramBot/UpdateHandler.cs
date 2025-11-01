@@ -40,16 +40,16 @@ public class UpdateHandler : IUpdateHandler
     public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, 
         CancellationToken cancellationToken)
     {
-        if (update.CallbackQuery != null)
-        {
-            await botClient.AnswerCallbackQuery(update.CallbackQuery.Id, cancellationToken: cancellationToken);
-            return;
-        }
-        
         OnHandleUpdateStarted?.Invoke(update.Message?.Text ?? "Unknown message");
         
         try
         {
+            if (update.CallbackQuery != null)
+            {
+                await OnCallbackQuery(botClient, update.CallbackQuery, cancellationToken);
+                return;
+            }
+            
             if (update.Message.Text?.ToLower() == "/cancel")
             {
                 var context = await _contextRepository.GetContext(update.Message.Chat.Id, cancellationToken);
@@ -241,13 +241,9 @@ public class UpdateHandler : IUpdateHandler
     {
         await botClient.SendMessage(chat.Id,"Описание доступных команд:", cancellationToken: cancellationToken);
         await botClient.SendMessage(chat.Id,"/start - начало работы с ботом, ввод имени", cancellationToken: cancellationToken);
-        await botClient.SendMessage(chat.Id,"/info - получить информацию о боте", cancellationToken: cancellationToken);
         await botClient.SendMessage(chat.Id,"/addtask - добавить задачу в список задач", cancellationToken: cancellationToken);
         await botClient.SendMessage(chat.Id,"/show - показать список текущих задач", cancellationToken: cancellationToken);
-        await botClient.SendMessage(chat.Id,"/removetask - удалить задачу из текущего списка", cancellationToken: cancellationToken);
-        await botClient.SendMessage(chat.Id,"/completetask - отметить задачу как завершенную", cancellationToken: cancellationToken);
         await botClient.SendMessage(chat.Id,"/report - показать статистику по задачам", cancellationToken: cancellationToken);
-        await botClient.SendMessage(chat.Id,"/find - найти задачу по названию", cancellationToken: cancellationToken);
         await botClient.SendMessage(chat.Id,"/cancel - отменить текущий сценарий", cancellationToken: cancellationToken);
     }
 
@@ -411,9 +407,7 @@ public class UpdateHandler : IUpdateHandler
     {
         return new ReplyKeyboardMarkup(new[]
         {
-            new KeyboardButton[] { "/show" },
-            new KeyboardButton[] { "/report", "/addtask" },
-            new KeyboardButton[] { "/help", "/exit" }
+            new KeyboardButton[] { "/addtask", "/show", "/report" }
         })
         {
             ResizeKeyboard = true,
@@ -509,6 +503,46 @@ public class UpdateHandler : IUpdateHandler
         });
 
         return new InlineKeyboardMarkup(buttons);
+    }
+    
+    private async Task OnCallbackQuery(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken ct)
+    {
+        await botClient.AnswerCallbackQuery(callbackQuery.Id, cancellationToken: ct);
+        
+        var user = await _userService.GetUserAsync(callbackQuery.From.Id, ct);
+        if (user == null) return;
+        
+        var callbackDto = CallbackDto.FromString(callbackQuery.Data);
+        
+        if (callbackDto.Action == "show")
+        {
+            var listCallbackDto = ToDoListCallbackDto.FromString(callbackQuery.Data);
+            var tasks = await _toDoService.GetByUserIdAndList(user.UserId, listCallbackDto.ToDoListId, ct);
+            var message = "Задачи:\n";
+            
+            foreach (var task in tasks)
+            {
+                message += $"{task.Name} - {task.Deadline:dd.MM.yyyy}\n";
+            }
+        
+            await botClient.SendMessage(
+                chatId: callbackQuery.Message.Chat.Id,
+                text: message,
+                cancellationToken: ct);
+        }
+        
+        else if (callbackDto.Action == "addlist")
+        {
+            var context = new ScenarioContext(callbackQuery.From.Id, ScenarioContext.ScenarioType.AddList);
+            await _contextRepository.SetContext(context.UserId, context, ct);
+            await ProcessScenario(botClient, context, new Update { CallbackQuery = callbackQuery }, ct);
+        }
+        else if (callbackDto.Action == "deletelist") 
+        {
+            var context = new ScenarioContext(callbackQuery.From.Id, ScenarioContext.ScenarioType.DeleteList);
+            await _contextRepository.SetContext(context.UserId, context, ct);
+            await ProcessScenario(botClient, context, new Update { CallbackQuery = callbackQuery }, ct);
+        }
     }
     
 }

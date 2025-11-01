@@ -5,7 +5,9 @@ public class ScenarioContext
     public enum ScenarioType
     {
         None,
-        AddTask
+        AddTask,
+        AddList,
+        DeleteList
     }
     
     public long UserId { get; set; }
