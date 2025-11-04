@@ -15,8 +15,9 @@ public class ToDoItem
     public ToDoItemState State { get; set; }
     public DateTime? StateChangedAt { get; set; }
     public DateTime Deadline { get; set; }
+    public ToDoList? List { get; set; }
 
-    public ToDoItem(ToDoUser user, string name, DateTime deadline)
+    public ToDoItem(ToDoUser user, string name, DateTime deadline, ToDoList? list)
     {
         User = user;
         Name = name;
@@ -25,5 +26,6 @@ public class ToDoItem
         State = ToDoItemState.Active;
         StateChangedAt = null;
         Deadline = deadline;
+        List = list;
     }
 }

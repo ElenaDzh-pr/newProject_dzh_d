@@ -23,7 +23,7 @@ public class ToDoService : IToDoService
         return await _toDoRepository.GetActiveByUserIdAsync(userId, CancellationToken.None);
     }
 
-    public async Task<ToDoItem> AddAsync(ToDoUser user, string name, DateTime deadline)
+    public async Task<ToDoItem> AddAsync(ToDoUser user, string name, DateTime deadline, ToDoList? list)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -47,7 +47,7 @@ public class ToDoService : IToDoService
             throw new DuplicateTaskException(name);
         }
 
-        var newTask = new ToDoItem(user, name, deadline);
+        var newTask = new ToDoItem(user, name, deadline, list);
         await _toDoRepository.AddAsync(newTask, CancellationToken.None);
         return newTask;
     }
@@ -93,4 +93,25 @@ public class ToDoService : IToDoService
             item.Name.StartsWith(namePrefix, StringComparison.OrdinalIgnoreCase), CancellationToken.None);
     }
 
+    public async Task<IReadOnlyList<ToDoItem>> GetByUserIdAndList(Guid userId, Guid? listId, CancellationToken ct)
+    {
+        var allItems = await GetAllByUserIdAsync(userId);
+
+        return allItems
+            .Where(item => MatchesListFilter(item, listId))
+            .ToList()
+            .AsReadOnly();
+    }
+    
+    private bool MatchesListFilter(ToDoItem item, Guid? listId)
+    {
+        if (listId == null)
+        {
+            return item.List == null;
+        }
+        else
+        {
+            return item.List?.Id == listId;
+        }
+    }
 }
