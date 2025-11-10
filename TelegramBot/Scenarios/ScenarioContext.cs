@@ -7,7 +7,8 @@ public class ScenarioContext
         None,
         AddTask,
         AddList,
-        DeleteList
+        DeleteList,
+        DeleteTask
     }
     
     public long UserId { get; set; }
