@@ -102,7 +102,12 @@ public class ToDoService : IToDoService
             .ToList()
             .AsReadOnly();
     }
-    
+
+    public async Task<ToDoItem?> Get(Guid toDoItemId, CancellationToken ct)
+    {
+        return await _toDoRepository.GetAsync(toDoItemId, ct);
+    }
+
     private bool MatchesListFilter(ToDoItem item, Guid? listId)
     {
         if (listId == null)

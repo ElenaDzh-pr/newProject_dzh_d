@@ -109,15 +109,34 @@ public class AddTaskScenario : IScenario
     {
         var buttons = new List<InlineKeyboardButton[]>();
         
-        var noListCallback = new ToDoListCallbackDto 
+        var noListCallback = new PagedListCallbackDto 
         { 
-            Action = "select", 
-            ToDoListId = null 
+            Action = "show", 
+            ToDoListId = null,
+            Page = 0
         }.ToString();
         
         buttons.Add(new[]
         {
             InlineKeyboardButton.WithCallbackData("📌 Без списка", noListCallback)
+        });
+        
+        var completedCallback = new PagedListCallbackDto
+        { 
+            Action = "show_completed", 
+            ToDoListId = null,
+            Page = 0
+        }.ToString();
+    
+        buttons.Add(new[]
+        {
+            InlineKeyboardButton.WithCallbackData("☑️Посмотреть выполненные", completedCallback)
+        });
+    
+        buttons.Add(new[]
+        {
+            InlineKeyboardButton.WithCallbackData("🆕 Добавить", "addlist"),
+            InlineKeyboardButton.WithCallbackData("❌ Удалить", "deletelist")
         });
 
         return new InlineKeyboardMarkup(buttons);
